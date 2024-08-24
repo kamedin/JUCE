@@ -2416,7 +2416,8 @@ private:
 
         if (parentToAddTo != nullptr)
         {
-            type |= WS_CHILD;
+            if ((styleFlags & windowIsOwned) == 0)
+                type |= WS_CHILD;
         }
         else
         {

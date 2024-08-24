@@ -72,25 +72,19 @@ private:
     void componentParentHierarchyChanged (Component&) override;
     void componentVisibilityChanged (Component&) override;
 
-    void updateParent();
+    void updateParentHierarchy();
     void updateShadows();
 
     class ShadowWindow;
+    class ComponentWithWeakReference;
 
     WeakReference<Component> owner;
+    std::set<ComponentWithWeakReference> observedComponents;
     OwnedArray<Component> shadowWindows;
     DropShadow shadow;
     bool reentrant = false;
-    WeakReference<Component> lastParentComp;
-
-    class ParentVisibilityChangedListener;
-    std::unique_ptr<ParentVisibilityChangedListener> visibilityChangedListener;
-
-    class VirtualDesktopWatcher;
-    std::unique_ptr<VirtualDesktopWatcher> virtualDesktopWatcher;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DropShadower)
-    JUCE_DECLARE_WEAK_REFERENCEABLE (DropShadower)
 };
 
 } // namespace juce
