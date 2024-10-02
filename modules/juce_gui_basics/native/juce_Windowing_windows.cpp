@@ -1793,11 +1793,7 @@ public:
 
         const auto screenPos = convertLogicalScreenPointToPhysical (localPos + getScreenPosition(), hwnd);
 
-        if (trueIfInAChildWindow)
-            return getClientRectInScreen().contains (screenPos);
-
         auto w = WindowFromPoint (D2DUtilities::toPOINT (screenPos));
-
         return w == hwnd || (trueIfInAChildWindow && (IsChild (hwnd, w) != 0));
     }
 
@@ -3398,8 +3394,7 @@ private:
             r = D2DUtilities::toRECT (modifiedPhysicalBounds);
         }
 
-        if (renderContext != nullptr)
-            renderContext->setSize (r.right - r.left, r.bottom - r.top);
+        updateBorderSize();
 
         return TRUE;
     }
@@ -4305,17 +4300,33 @@ private:
                 switch (wParam)
                 {
                     case HTCLOSE:
-                        PostMessage (h, WM_CLOSE, 0, 0);
+                        if ((styleFlags & windowHasCloseButton) != 0 && ! sendInputAttemptWhenModalMessage())
+                        {
+                            if (hasTitleBar())
+                                PostMessage (h, WM_CLOSE, 0, 0);
+                            else
+                                component.windowControlClickedClose();
+                        }
                         return 0;
 
                     case HTMAXBUTTON:
                         if ((styleFlags & windowHasMaximiseButton) != 0 && ! sendInputAttemptWhenModalMessage())
-                            setFullScreen (! isFullScreen());
+                        {
+                            if (hasTitleBar())
+                                setFullScreen (! isFullScreen());
+                            else
+                                component.windowControlClickedMaximise();
+                        }
                         return 0;
 
                     case HTMINBUTTON:
                         if ((styleFlags & windowHasMinimiseButton) != 0 && ! sendInputAttemptWhenModalMessage())
-                            setMinimised (true);
+                        {
+                            if (hasTitleBar())
+                                setMinimised (true);
+                            else
+                                component.windowControlClickedMinimise();
+                        }
                         return 0;
                 }
                 break;
