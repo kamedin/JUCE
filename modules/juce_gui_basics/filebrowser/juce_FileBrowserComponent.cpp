@@ -259,7 +259,8 @@ void FileBrowserComponent::setRoot (const File& newRootDirectory)
             }
 
             if (! alreadyListed)
-                currentPathBox.addItem (path, currentPathBox.getNumItems() + 2);
+                currentPathBox.addItem (path, currentPathBox.getNumItems() + 1
+                                        + (int) std::count (rootNames.begin(), rootNames.end(), String()));
         }
     }
 
@@ -534,7 +535,6 @@ void FileBrowserComponent::getDefaultRoots (StringArray& rootNames, StringArray&
    #if JUCE_WINDOWS
     Array<File> roots;
     File::findFileSystemRoots (roots);
-    rootPaths.clear();
 
     for (int i = 0; i < roots.size(); ++i)
     {
