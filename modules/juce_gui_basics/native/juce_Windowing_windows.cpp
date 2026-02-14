@@ -2059,7 +2059,8 @@ public:
 
         if (parentToAddTo != nullptr)
         {
-            result |= WS_CHILD;
+            if ((styleFlags & windowIsOwned) == 0)
+                result |= WS_CHILD;
         }
         else if (titled || usesDropShadow)
         {
