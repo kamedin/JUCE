@@ -120,6 +120,14 @@ public:
     bool operator== (StringRef s) const noexcept                        { return text.compare (s.text) == 0; }
     /** Case-sensitive comparison of two StringRefs. */
     bool operator!= (StringRef s) const noexcept                        { return text.compare (s.text) != 0; }
+    /** Case-sensitive comparison of two StringRefs. */
+    bool operator<  (StringRef s) const noexcept                        { return text.compare (s.text) < 0; }
+    /** Case-sensitive comparison of two StringRefs. */
+    bool operator<= (StringRef s) const noexcept                        { return text.compare (s.text) <= 0; }
+    /** Case-sensitive comparison of two StringRefs. */
+    bool operator>  (StringRef s) const noexcept                        { return text.compare (s.text) > 0; }
+    /** Case-sensitive comparison of two StringRefs. */
+    bool operator>= (StringRef s) const noexcept                        { return text.compare (s.text) >= 0; }
 
     //==============================================================================
     /** The text that is referenced. */
