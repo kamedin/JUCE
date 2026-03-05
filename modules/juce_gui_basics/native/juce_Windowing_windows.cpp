@@ -5734,6 +5734,12 @@ String SystemClipboard::getTextFromClipboard()
 //==============================================================================
 void Desktop::setKioskComponent (Component* kioskModeComp, bool enableOrDisable, bool /*allowMenusAndBars*/)
 {
+    if (kioskModeComp == nullptr)
+    {
+        jassertfalse;
+        return;
+    }
+
     if (auto* peer = dynamic_cast<HWNDComponentPeer*> (kioskModeComp->getPeer()))
     {
         const auto prevFlags = (DWORD) GetWindowLong (peer->getHWND(), GWL_STYLE);
@@ -5763,8 +5769,13 @@ void Desktop::setKioskComponent (Component* kioskModeComp, bool enableOrDisable,
         jassertfalse;
     }
 
-    if (kioskModeComp != nullptr && enableOrDisable)
-        kioskModeComp->setBounds (getDisplays().getDisplayForRect (kioskModeComp->getScreenBounds())->logicalBounds.getSmallestIntegerContainer());
+    if (enableOrDisable)
+    {
+        if (const auto* display = getDisplays().getDisplayForRect (kioskModeComp->getScreenBounds()); display != nullptr)
+            kioskModeComp->setBounds (display->logicalBounds.getSmallestIntegerContainer());
+        else
+            jassertfalse;
+    }
 }
 
 void Desktop::allowedOrientationsChanged() {}
