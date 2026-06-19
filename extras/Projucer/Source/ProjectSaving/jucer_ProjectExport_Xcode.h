@@ -105,6 +105,15 @@ public:
     }
 
     //==============================================================================
+    ScriptBuilder& loop (const String& variable, const String& range, const String& body)
+    {
+        return insertLine ("for " + variable + " in " + range + "; do")
+              .insertScript (ScriptBuilder { indent + 1 }.insertScript (body).toString())
+              .insertLine ("done")
+              .insertLine();
+    }
+
+    //==============================================================================
     ScriptBuilder& insertLine (const String& line = {})
     {
         constexpr auto spacesPerIndent = 2;
@@ -1428,7 +1437,6 @@ public:
         Array<XmlElement> xcodeExtraPListEntries;
 
         StringArray frameworkIDs, buildPhaseIDs, configIDs, sourceIDs, rezFileIDs, dependencyIDs;
-        StringArray frameworkNames;
         String mainBuildProductID;
         File infoPlistFile;
 
@@ -2014,6 +2022,11 @@ public:
             // plug-in or applying any PACE Fusion post-build steps.
             // We'll need to add this strip step ourselves as a post build phase.
             s.set ("DEPLOYMENT_POSTPROCESSING", "NO");
+
+            // If we're stripping the binary we don't want to inject the base
+            // entitlements which might prevent notarisation.
+            if (config.isStripLocalSymbolsEnabled())
+                s.set ("CODE_SIGN_INJECT_BASE_ENTITLEMENTS", "NO");
 
             StringArray defsList;
 
@@ -2849,10 +2862,41 @@ private:
                 installTarget();
         };
 
+        const auto signEmbeddedFrameworks = [&]
+        {
+            for (const auto& frameworkName : embeddedFrameworkNames)
+            {
+                const auto frameworkVersionsDir = StringArray {
+                    "${CODESIGNING_FOLDER_PATH}",
+                    "${BUNDLE_FRAMEWORKS_FOLDER_PATH}",
+                    frameworkName,
+                    "Versions"
+                }.joinIntoString ("/");
+
+                const auto script = ScriptBuilder{}
+                    .loop ("frameworkVersion", doubleQuoted (frameworkVersionsDir) + "/*", ScriptBuilder{}
+                        .ifThen ("! -L " + doubleQuoted ("${frameworkVersion}"), ScriptBuilder{}
+                            .run ("codesign",
+                                  "--force",
+                                  "--sign", doubleQuoted ("${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY}}"),
+                                  "--verbose=4",
+                                  "--timestamp",
+                                  target.shouldUseHardenedRuntime() ? "-o runtime" : "",
+                                  "--preserve-metadata=identifier,entitlements,flags",
+                                  "--generate-entitlement-der",
+                                  doubleQuoted ("${frameworkVersion}"))
+                            .toString())
+                        .toString());
+
+                target.addShellScriptBuildPhase ("Sign " + frameworkName, script.toStringWithDefaultShellOptions());
+            }
+        };
+
         switch (target.type)
         {
             case XcodeTarget::GUIApp:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2894,6 +2938,7 @@ private:
 
             case XcodeTarget::VSTPlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2905,6 +2950,7 @@ private:
 
             case XcodeTarget::VST3PlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2917,6 +2963,7 @@ private:
 
             case XcodeTarget::AAXPlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2928,6 +2975,7 @@ private:
 
             case XcodeTarget::AudioUnitPlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2939,6 +2987,7 @@ private:
 
             case XcodeTarget::AudioUnitv3PlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
 
                 if (shouldDuplicateAppExResourcesFolder())
@@ -2953,6 +3002,7 @@ private:
 
             case XcodeTarget::StandalonePlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2965,6 +3015,7 @@ private:
 
             case XcodeTarget::UnityPlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 buildCarbonResources();
@@ -2977,6 +3028,7 @@ private:
 
             case XcodeTarget::LV2PlugIn:
             {
+                signEmbeddedFrameworks();
                 runPreBuildScript();
                 copyBundleResources();
                 compileSourceFiles();
@@ -3271,10 +3323,7 @@ private:
             auto frameworkID = addFrameworkFn (framework);
 
             for (auto& target : targets)
-            {
                 target->frameworkIDs.add (frameworkID);
-                target->frameworkNames.add (framework);
-            }
         }
     }
 
@@ -3341,7 +3390,6 @@ private:
                             || target->xcodeFrameworks.contains (framework))
                         {
                             target->frameworkIDs.add (frameworkID);
-                            target->frameworkNames.add (framework);
                         }
                     }
                 }
@@ -3462,11 +3510,12 @@ private:
                         ValueTree v (fileID + " /* " + buildProduct.path + " */");
                         v.setProperty ("isa", "PBXBuildFile", nullptr);
                         v.setProperty ("fileRef", proxyID, nullptr);
-                        v.setProperty ("settings", "{ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }", nullptr);
+                        v.setProperty ("settings", "{ATTRIBUTES = (RemoveHeadersOnCopy, ); }", nullptr);
 
                         addObject (v);
 
                         embeddedFrameworkIDs.add (fileID);
+                        embeddedFrameworkNames.add (buildProduct.path);
                     }
                 }
             }
@@ -3951,11 +4000,12 @@ private:
         ValueTree v (fileID + " /* " + filename + " */");
         v.setProperty ("isa", "PBXBuildFile", nullptr);
         v.setProperty ("fileRef", fileRefID, nullptr);
-        v.setProperty ("settings", "{ ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }", nullptr);
+        v.setProperty ("settings", "{ ATTRIBUTES = (RemoveHeadersOnCopy, ); }", nullptr);
 
         addObject (v);
 
         frameworkFileIDs.add (fileRefID);
+        embeddedFrameworkNames.add (filename);
 
         return fileID;
     }
@@ -4310,7 +4360,8 @@ private:
     mutable ValueTree objects { "objects" };
 
     mutable StringArray resourceIDs, sourceIDs, targetIDs, frameworkFileIDs, embeddedFrameworkIDs,
-                        rezFileIDs, resourceFileRefs, subprojectFileIDs, subprojectDependencyIDs;
+                        embeddedFrameworkNames, rezFileIDs, resourceFileRefs, subprojectFileIDs,
+                        subprojectDependencyIDs;
 
     struct SubprojectReferenceInfo
     {
