@@ -41,6 +41,13 @@ void DrawableComponent::setTransformToFit (const Rectangle<float>& areaInParent,
         setTransform (placement.getTransformToFit (drawable.getDrawableBounds(), areaInParent));
 }
 
+Path DrawableComponent::getOutlineAsPath() const
+{
+    auto p = drawable.getOutlineAsPath();
+    p.applyTransform (getTransform());
+    return p;
+}
+
 void DrawableComponent::paint (Graphics& g)
 {
     g.setOrigin (originRelativeToComponent);
@@ -93,7 +100,7 @@ std::unique_ptr<AccessibilityHandler> DrawableComponent::createAccessibilityHand
 
 void DrawableComponent::resetComponentBoundsToDrawable()
 {
-    const auto drawableBounds = drawable.getDrawableBounds().getSmallestIntegerContainer();
+    const auto drawableBounds = drawable.getDrawableBounds().toNearestInt();
     originRelativeToComponent = -drawableBounds.getPosition();
     setBounds (drawableBounds);
 }

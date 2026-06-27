@@ -28,7 +28,7 @@
 
   ID:                 juce_gui_basics
   vendor:             juce
-  version:            8.0.13
+  version:            9.0.0
   name:               JUCE GUI core classes
   description:        Basic user-interface components and related classes.
   website:            http://www.juce.com/juce
@@ -223,7 +223,7 @@ namespace juce
 #include "buttons/juce_Button.h"
 #include "buttons/juce_ArrowButton.h"
 #include "misc/juce_DrawableComponent.h"
-#include "detail/juce_OwningDrawableComponent.h"
+#include "misc/juce_OwningDrawableComponent.h"
 #include "buttons/juce_DrawableButton.h"
 #include "buttons/juce_HyperlinkButton.h"
 #include "buttons/juce_ImageButton.h"

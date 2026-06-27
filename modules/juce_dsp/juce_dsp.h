@@ -28,7 +28,7 @@
 
   ID:                 juce_dsp
   vendor:             juce
-  version:            8.0.13
+  version:            9.0.0
   name:               JUCE DSP classes
   description:        Classes for audio buffer manipulation, digital audio processing, filtering, oversampling, fast math functions etc.
   website:            http://www.juce.com/juce
@@ -255,6 +255,7 @@ namespace util
 #include "maths/juce_LookupTable.h"
 #include "maths/juce_LogRampedValue.h"
 #include "containers/juce_AudioBlock.h"
+#include "containers/juce_SIMDInterleavingHelpers.h"
 #include "processors/juce_ProcessContext.h"
 #include "processors/juce_ProcessorWrapper.h"
 #include "processors/juce_ProcessorChain.h"
