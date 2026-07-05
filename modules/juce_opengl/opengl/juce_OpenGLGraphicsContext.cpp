@@ -153,24 +153,22 @@ private:
 
     void imageDataBeingDeleted (ImagePixelData* im) override
     {
-        for (int i = images.size(); --i >= 0;)
+        const auto iter = std::find_if (images.begin(), images.end(), [&] (auto image)
         {
-            auto& ci = *images.getUnchecked (i);
+            return image->pixelData == im;
+        });
 
-            if (ci.pixelData == im)
-            {
-                if (canUseContext())
-                {
-                    totalSize -= ci.imageSize;
-                    images.remove (i);
-                }
-                else
-                {
-                    ci.pixelData = nullptr;
-                }
+        if (iter == images.end())
+            return;
 
-                break;
-            }
+        if (canUseContext())
+        {
+            totalSize -= (*iter)->imageSize;
+            images.remove ((int) std::distance (images.begin(), iter));
+        }
+        else
+        {
+            (*iter)->pixelData = nullptr;
         }
     }
 
@@ -185,17 +183,16 @@ private:
 
     void removeOldestItem()
     {
-        CachedImage* oldest = nullptr;
-
-        for (auto& i : images)
-            if (oldest == nullptr || i->lastUsed < oldest->lastUsed)
-                oldest = i;
-
-        if (oldest != nullptr)
+        const auto iter = std::min_element (images.begin(), images.end(), [&] (auto a, auto b)
         {
-            totalSize -= oldest->imageSize;
-            images.removeObject (oldest);
-        }
+            return a->lastUsed < b->lastUsed;
+        });
+
+        if (iter == images.end())
+            return;
+
+        totalSize -= (*iter)->imageSize;
+        images.remove ((int) std::distance (images.begin(), iter));
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CachedImageList)
@@ -1137,7 +1134,7 @@ struct StateHelpers
     struct ActiveTextures
     {
         explicit ActiveTextures (const OpenGLContext& c) noexcept
-            : context (c)
+            : needsToEnableTexture (! c.isCoreProfile())
         {
         }
 
@@ -1224,7 +1221,7 @@ struct StateHelpers
             if (currentActiveTexture != index)
             {
                 currentActiveTexture = index;
-                context.extensions.glActiveTexture (GL_TEXTURE0 + (GLenum) index);
+                glActiveTexture (GL_TEXTURE0 + (GLenum) index);
                 JUCE_CHECK_OPENGL_ERROR
             }
         }
@@ -1243,30 +1240,30 @@ struct StateHelpers
                 glBindTexture (GL_TEXTURE_2D, textureID);
                 JUCE_CHECK_OPENGL_ERROR
             }
+           #if JUCE_DEBUG
             else
             {
-               #if JUCE_DEBUG
                 GLint t = 0;
                 glGetIntegerv (GL_TEXTURE_BINDING_2D, &t);
                 jassert (t == (GLint) textureID);
-               #endif
             }
+           #endif
         }
 
     private:
         static constexpr auto numTextures = 3;
         GLuint currentTextureID[numTextures];
         int texturesEnabled = 0, currentActiveTexture = -1;
-        const OpenGLContext& context;
-        const bool needsToEnableTexture = ! context.isCoreProfile();
+        bool needsToEnableTexture;
 
-        ActiveTextures& operator= (const ActiveTextures&);
+        JUCE_DECLARE_NON_COPYABLE (ActiveTextures)
+        JUCE_DECLARE_NON_MOVEABLE (ActiveTextures)
     };
 
     //==============================================================================
     struct TextureCache
     {
-        TextureCache() noexcept {}
+        TextureCache() = default;
 
         OpenGLTexture* getTexture (ActiveTextures& activeTextures, int w, int h)
         {
@@ -1593,9 +1590,9 @@ private:
 };
 
 //==============================================================================
-struct GLState
+struct GLState : private ImagePixelData::Listener
 {
-    GLState (const Target& t) noexcept
+    explicit GLState (const Target& t) noexcept
         : target (t),
           activeTextures (t.context),
           currentShader (t.context),
@@ -1615,9 +1612,15 @@ struct GLState
         JUCE_CHECK_OPENGL_ERROR
     }
 
-    ~GLState()
+    ~GLState() override
     {
         flush();
+
+        for (auto* pixelData : observedPixelData)
+        {
+            pixelData->listeners.remove (this);
+        }
+
         target.context.extensions.glBindFramebuffer (GL_FRAMEBUFFER, previousFrameBufferTarget);
     }
 
@@ -1747,13 +1750,21 @@ struct GLState
         JUCE_CHECK_OPENGL_ERROR
     }
 
-    void setShaderForTiledImageFill (const TextureInfo& textureInfo,
+    void setShaderForTiledImageFill (const Image& image,
                                      const AffineTransform& transform,
                                      int maskTextureID,
                                      const Rectangle<int>* maskArea,
                                      bool isTiledFill,
                                      BlendMode mode)
     {
+        if (auto pd = image.getPixelData())
+        {
+            observedPixelData.insert (pd.get());
+            pd->listeners.add (this);
+        }
+
+        const auto textureInfo = cachedImageList->getTextureFor (image);
+
         blendMode.setBlendMode (shaderQuadQueue, mode);
         auto programs = currentShader.programs;
 
@@ -1818,6 +1829,18 @@ private:
     GLuint previousFrameBufferTarget;
     SavedBinding<TraitsVAO> savedVAOBinding;
     ViewportRestorer viewportRestorer;
+    std::set<ImagePixelData*> observedPixelData;
+
+    void imageDataBeingDeleted (ImagePixelData* ipd) override
+    {
+        observedPixelData.erase (ipd);
+        activeTextures.bindTexture (0);
+    }
+
+    void imageDataChanged (ImagePixelData*) override {}
+
+    JUCE_DECLARE_NON_COPYABLE (GLState)
+    JUCE_DECLARE_NON_MOVEABLE (GLState)
 };
 
 //==============================================================================
@@ -1891,7 +1914,7 @@ struct SavedState final : public RenderingHelpers::SavedStateBase<SavedState>
     {
         state->shaderQuadQueue.flush();
 
-        state->setShaderForTiledImageFill (state->cachedImageList->getTextureFor (src),
+        state->setShaderForTiledImageFill (src,
                                            trans,
                                            0,
                                            nullptr,
