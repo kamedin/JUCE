@@ -1571,11 +1571,11 @@ private:
     }
 
     void audioDeviceProcessorCallback (int numSamples,
-                                       const AudioTimeStamp* inNow,
-                                       const AudioBufferList* inInputData,
                                        const AudioTimeStamp*,
+                                       const AudioBufferList* inInputData,
+                                       const AudioTimeStamp* inInputTime,
                                        AudioBufferList* outOutputData,
-                                       const AudioTimeStamp*) override
+                                       const AudioTimeStamp* inOutputTime) override
     {
         const SpinLock::ScopedTryLockType lock { mutex };
 
@@ -1602,7 +1602,19 @@ private:
             inputSamples[channel][sample] = value;
         });
 
-        const AudioIODeviceCallbackContext context { inNow != nullptr ? &inNow->mHostTime : nullptr };
+        uint64_t hostTimeNs{};
+
+        AudioIODeviceCallbackContext context;
+
+        auto* timeStamp = buffers[Direction::output].getNumChannels() > 0 ? inOutputTime
+                                                                          : inInputTime;
+
+        if (timeStamp != nullptr)
+        {
+            hostTimeNs = timeConversions.hostTimeToNanos (timeStamp->mHostTime);
+            context.hostTimeNs = &hostTimeNs;
+        }
+
         callback->audioDeviceIOCallbackWithContext (buffers[Direction::input].getArrayOfReadPointers(),
                                                     buffers[Direction::input].getNumChannels(),
                                                     buffers[Direction::output].getArrayOfWritePointers(),
@@ -1630,6 +1642,7 @@ private:
     std::map<PlaybackDirection, AudioBuffer<float>> buffers;
     std::atomic<bool> playing{};
     std::atomic<bool> detectedSetupChange{};
+    CoreAudioTimeConversions timeConversions;
     mutable SpinLock mutex;
     mutable std::mutex errorMutex;
 };
