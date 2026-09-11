@@ -32,44 +32,17 @@
   ==============================================================================
 */
 
+namespace juce::universal_midi_packets
+{
 
-/*******************************************************************************
- The block below describes the properties of this module, and is read by
- the Projucer to automatically generate project code that uses it.
- For details about the syntax and how to create or use a module, see the
- JUCE Module Format.md file.
+auto StaticDeviceInfo::tie() const
+{
+    return std::tie (identifierSrc, identifierDst, name, manufacturer, product, transport, source, destination);
+}
 
+bool StaticDeviceInfo::operator== (const StaticDeviceInfo& other) const
+{
+    return tie() == other.tie();
+}
 
- BEGIN_JUCE_MODULE_DECLARATION
-
-  ID:                 juce_osc
-  vendor:             juce
-  version:            9.0.2
-  name:               JUCE OSC classes
-  description:        Open Sound Control implementation.
-  website:            http://www.juce.com/juce
-  license:            AGPLv3/Commercial
-  minimumCppStandard: 17
-
-  dependencies:       juce_events
-
- END_JUCE_MODULE_DECLARATION
-
-*******************************************************************************/
-
-
-#pragma once
-#define JUCE_OSC_H_INCLUDED
-
-#include <juce_core/juce_core.h>
-#include <juce_events/juce_events.h>
-
-//==============================================================================
-#include "osc/juce_OSCTypes.h"
-#include "osc/juce_OSCTimeTag.h"
-#include "osc/juce_OSCArgument.h"
-#include "osc/juce_OSCAddress.h"
-#include "osc/juce_OSCMessage.h"
-#include "osc/juce_OSCBundle.h"
-#include "osc/juce_OSCReceiver.h"
-#include "osc/juce_OSCSender.h"
+}

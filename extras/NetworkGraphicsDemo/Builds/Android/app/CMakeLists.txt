@@ -25,9 +25,9 @@ include_directories( AFTER
 enable_language(ASM)
 
 if(JUCE_BUILD_CONFIGURATION MATCHES "DEBUG")
-    add_definitions([[-DJUCE_PROJUCER_VERSION=0x90001]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_devices=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_formats=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_utils=1]] [[-DJUCE_MODULE_AVAILABLE_juce_core=1]] [[-DJUCE_MODULE_AVAILABLE_juce_cryptography=1]] [[-DJUCE_MODULE_AVAILABLE_juce_data_structures=1]] [[-DJUCE_MODULE_AVAILABLE_juce_events=1]] [[-DJUCE_MODULE_AVAILABLE_juce_graphics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_extra=1]] [[-DJUCE_MODULE_AVAILABLE_juce_opengl=1]] [[-DJUCE_MODULE_AVAILABLE_juce_osc=1]] [[-DJUCE_WEBVIEW_INTEROP_LIBRARY_VERSION="1.0.0"]] [[-DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1]] [[-DJUCE_STANDALONE_APPLICATION=1]] [[-DJUCE_DEBUG=0]] [[-DJUCER_ANDROIDSTUDIO_7F0E4A25=1]] [[-DJUCE_APP_VERSION=1.0.0]] [[-DJUCE_APP_VERSION_HEX=0x10000]] [[-DDEBUG=1]] [[-D_DEBUG=1]])
+    add_definitions([[-DJUCE_PROJUCER_VERSION=0x90002]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_devices=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_formats=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_utils=1]] [[-DJUCE_MODULE_AVAILABLE_juce_core=1]] [[-DJUCE_MODULE_AVAILABLE_juce_cryptography=1]] [[-DJUCE_MODULE_AVAILABLE_juce_data_structures=1]] [[-DJUCE_MODULE_AVAILABLE_juce_events=1]] [[-DJUCE_MODULE_AVAILABLE_juce_graphics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_extra=1]] [[-DJUCE_MODULE_AVAILABLE_juce_opengl=1]] [[-DJUCE_MODULE_AVAILABLE_juce_osc=1]] [[-DJUCE_WEBVIEW_INTEROP_LIBRARY_VERSION="1.0.0"]] [[-DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1]] [[-DJUCE_STANDALONE_APPLICATION=1]] [[-DJUCE_DEBUG=0]] [[-DJUCER_ANDROIDSTUDIO_7F0E4A25=1]] [[-DJUCE_APP_VERSION=1.0.0]] [[-DJUCE_APP_VERSION_HEX=0x10000]] [[-DDEBUG=1]] [[-D_DEBUG=1]])
 elseif(JUCE_BUILD_CONFIGURATION MATCHES "RELEASE")
-    add_definitions([[-DJUCE_PROJUCER_VERSION=0x90001]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_devices=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_formats=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_utils=1]] [[-DJUCE_MODULE_AVAILABLE_juce_core=1]] [[-DJUCE_MODULE_AVAILABLE_juce_cryptography=1]] [[-DJUCE_MODULE_AVAILABLE_juce_data_structures=1]] [[-DJUCE_MODULE_AVAILABLE_juce_events=1]] [[-DJUCE_MODULE_AVAILABLE_juce_graphics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_extra=1]] [[-DJUCE_MODULE_AVAILABLE_juce_opengl=1]] [[-DJUCE_MODULE_AVAILABLE_juce_osc=1]] [[-DJUCE_WEBVIEW_INTEROP_LIBRARY_VERSION="1.0.0"]] [[-DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1]] [[-DJUCE_STANDALONE_APPLICATION=1]] [[-DJUCER_ANDROIDSTUDIO_7F0E4A25=1]] [[-DJUCE_APP_VERSION=1.0.0]] [[-DJUCE_APP_VERSION_HEX=0x10000]] [[-DNDEBUG=1]])
+    add_definitions([[-DJUCE_PROJUCER_VERSION=0x90002]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_devices=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_formats=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1]] [[-DJUCE_MODULE_AVAILABLE_juce_audio_utils=1]] [[-DJUCE_MODULE_AVAILABLE_juce_core=1]] [[-DJUCE_MODULE_AVAILABLE_juce_cryptography=1]] [[-DJUCE_MODULE_AVAILABLE_juce_data_structures=1]] [[-DJUCE_MODULE_AVAILABLE_juce_events=1]] [[-DJUCE_MODULE_AVAILABLE_juce_graphics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_basics=1]] [[-DJUCE_MODULE_AVAILABLE_juce_gui_extra=1]] [[-DJUCE_MODULE_AVAILABLE_juce_opengl=1]] [[-DJUCE_MODULE_AVAILABLE_juce_osc=1]] [[-DJUCE_WEBVIEW_INTEROP_LIBRARY_VERSION="1.0.0"]] [[-DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1]] [[-DJUCE_STANDALONE_APPLICATION=1]] [[-DJUCER_ANDROIDSTUDIO_7F0E4A25=1]] [[-DJUCE_APP_VERSION=1.0.0]] [[-DJUCE_APP_VERSION_HEX=0x10000]] [[-DNDEBUG=1]])
 else()
     message( FATAL_ERROR "No matching build-configuration found." )
 endif()
@@ -164,6 +164,7 @@ add_library( ${BINARY_NAME}
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPBlock.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPBlock.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPDisconnectionListener.h"
+    "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpoint.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpoint.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpointId.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpointId.h"
@@ -180,6 +181,7 @@ add_library( ${BINARY_NAME}
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPOutput.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPSession.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPSession.h"
+    "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPStaticDeviceInfo.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPStaticDeviceInfo.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPVirtualEndpoint.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPVirtualEndpoint.h"
@@ -2926,6 +2928,7 @@ set_source_files_properties(
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPBlock.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPBlock.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPDisconnectionListener.h"
+    "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpoint.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpoint.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpointId.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPEndpointId.h"
@@ -2942,6 +2945,7 @@ set_source_files_properties(
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPOutput.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPSession.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPSession.h"
+    "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPStaticDeviceInfo.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPStaticDeviceInfo.h"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPVirtualEndpoint.cpp"
     "../../../../../modules/juce_audio_devices/midi_io/ump/juce_UMPVirtualEndpoint.h"
