@@ -309,11 +309,11 @@ public:
 
         auto previousFrameBufferTarget = OpenGLFrameBuffer::getCurrentFrameBufferTarget();
         cachedImageFrameBuffer.makeCurrentRenderingTarget();
-        auto imageH = cachedImageFrameBuffer.getHeight();
+        const auto textureH = cachedImageFrameBuffer.getTextureHeight();
 
         for (auto& r : list)
         {
-            glScissor (r.getX(), imageH - r.getBottom(), r.getWidth(), r.getHeight());
+            glScissor (r.getX(), textureH - r.getBottom(), r.getWidth(), r.getHeight());
             glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         }
 
@@ -435,7 +435,7 @@ public:
                 glViewport (0, 0, viewportArea.getWidth(), viewportArea.getHeight());
                 context.currentRenderScale = currentAreaAndScale.scale;
                 context.renderer->renderOpenGL();
-                clearGLError();
+                clearDebugGLError();
             }
 
             if (context.renderComponents)
@@ -592,7 +592,8 @@ public:
         glBindTexture (GL_TEXTURE_2D, cachedImageFrameBuffer.getTextureID());
 
         const Rectangle<int> cacheBounds (cachedImageFrameBuffer.getWidth(), cachedImageFrameBuffer.getHeight());
-        context.copyTexture (cacheBounds, cacheBounds, cacheBounds.getWidth(), cacheBounds.getHeight(), false);
+        const Rectangle<int> textureBounds (cachedImageFrameBuffer.getTextureWidth(), cachedImageFrameBuffer.getTextureHeight());
+        context.copyTexture (cacheBounds, textureBounds, cacheBounds.getWidth(), cacheBounds.getHeight(), false);
         glBindTexture (GL_TEXTURE_2D, 0);
         JUCE_CHECK_OPENGL_ERROR
     }
@@ -699,7 +700,7 @@ public:
         {
             JUCE_CHECK_OPENGL_ERROR
             shadersAvailable = OpenGLShaderProgram::getLanguageVersion() > 0;
-            clearGLError();
+            OpenGLHelpers::resetErrorState();
         }
         else
         {
@@ -749,7 +750,7 @@ public:
             NativeContext::Locker locker (*nativeContext);
 
             (*work) (context);
-            clearGLError();
+            clearDebugGLError();
         }
     }
 
@@ -1768,7 +1769,7 @@ void OpenGLContext::copyTexture (const Rectangle<int>& targetClipArea,
         }
         else
         {
-            clearGLError();
+            OpenGLHelpers::resetErrorState();
         }
     }
     else
