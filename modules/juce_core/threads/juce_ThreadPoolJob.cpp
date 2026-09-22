@@ -35,59 +35,49 @@
 namespace juce
 {
 
-WaitableEvent::WaitableEvent (bool manualReset) noexcept
-    : useManualReset (manualReset)
+ThreadPoolJob::ThreadPoolJob (const String& name)  : jobName (name)
 {
 }
 
-void WaitableEvent::wait() const
+ThreadPoolJob::~ThreadPoolJob()
 {
-    std::unique_lock<std::mutex> lock (mutex);
-
-    if (! triggered)
-        condition.wait (lock, [this] { return triggered == true; });
-
-    if (! useManualReset)
-        reset();
+    // you mustn't delete a job while it's still in a pool! Use ThreadPool::removeJob()
+    // to remove it first!
+    jassert (pool == nullptr || ! pool->contains (this));
 }
 
-bool WaitableEvent::wait (Seconds timeOut) const
+String ThreadPoolJob::getJobName() const
 {
-    // Unlike wait (double), a negative timeout is not supported. To wait
-    // indefinitely, call wait() with no arguments.
-    jassert (timeOut >= Seconds { 0.0 });
-
-    std::unique_lock<std::mutex> lock (mutex);
-
-    if (! triggered && ! condition.wait_for (lock, timeOut, [this] { return triggered == true; }))
-        return false;
-
-    if (! useManualReset)
-        reset();
-
-    return true;
+    return jobName;
 }
 
-bool WaitableEvent::wait (double timeOutMilliseconds) const
+void ThreadPoolJob::setJobName (const String& newName)
 {
-    if (timeOutMilliseconds >= 0.0)
-        return wait (Milliseconds { timeOutMilliseconds });
-
-    wait();
-    return true;
+    jobName = newName;
 }
 
-void WaitableEvent::signal() const
+void ThreadPoolJob::signalJobShouldExit()
 {
-    std::lock_guard<std::mutex> lock (mutex);
-
-    triggered = true;
-    condition.notify_all();
+    shouldStop = true;
+    listeners.call ([] (Thread::Listener& l) { l.exitSignalSent(); });
 }
 
-void WaitableEvent::reset() const
+void ThreadPoolJob::addListener (Thread::Listener* listener)
 {
-    triggered = false;
+    listeners.add (listener);
+}
+
+void ThreadPoolJob::removeListener (Thread::Listener* listener)
+{
+    listeners.remove (listener);
+}
+
+ThreadPoolJob* ThreadPoolJob::getCurrentThreadPoolJob()
+{
+    if (auto* t = dynamic_cast<ThreadPool::ThreadPoolThread*> (Thread::getCurrentThread()))
+        return t->currentJob.load();
+
+    return nullptr;
 }
 
 } // namespace juce

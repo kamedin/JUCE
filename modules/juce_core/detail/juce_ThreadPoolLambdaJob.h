@@ -32,62 +32,40 @@
   ==============================================================================
 */
 
-namespace juce
+namespace juce::detail
 {
 
-WaitableEvent::WaitableEvent (bool manualReset) noexcept
-    : useManualReset (manualReset)
+template <typename Invokable, std::enable_if_t<std::is_same_v<std::invoke_result_t<Invokable&>, void>, int> = 0>
+ThreadPoolJob::JobStatus runThreadPoolLambdaJob (Invokable& job)
 {
+    job();
+    return ThreadPoolJob::jobHasFinished;
 }
 
-void WaitableEvent::wait() const
+template <typename Invokable, std::enable_if_t<std::is_same_v<std::invoke_result_t<Invokable&>, ThreadPoolJob::JobStatus>, int> = 0>
+ThreadPoolJob::JobStatus runThreadPoolLambdaJob (Invokable& job)
 {
-    std::unique_lock<std::mutex> lock (mutex);
-
-    if (! triggered)
-        condition.wait (lock, [this] { return triggered == true; });
-
-    if (! useManualReset)
-        reset();
+    return job();
 }
 
-bool WaitableEvent::wait (Seconds timeOut) const
+template <typename, typename = void>
+constexpr auto canRunThreadPoolLambdaJob = false;
+
+template <typename Invokable>
+constexpr auto canRunThreadPoolLambdaJob<Invokable, Void<decltype (runThreadPoolLambdaJob (std::declval<Invokable&>()))>> = true;
+
+template <typename Invokable>
+struct ThreadPoolLambdaJob final : public ThreadPoolJob
 {
-    // Unlike wait (double), a negative timeout is not supported. To wait
-    // indefinitely, call wait() with no arguments.
-    jassert (timeOut >= Seconds { 0.0 });
+    explicit ThreadPoolLambdaJob (Invokable&& jobToRun)
+        : ThreadPoolJob ("lambda"), job (std::move (jobToRun)) {}
 
-    std::unique_lock<std::mutex> lock (mutex);
+    JobStatus runJob() final
+    {
+        return runThreadPoolLambdaJob (job);
+    }
 
-    if (! triggered && ! condition.wait_for (lock, timeOut, [this] { return triggered == true; }))
-        return false;
+    Invokable job;
+};
 
-    if (! useManualReset)
-        reset();
-
-    return true;
-}
-
-bool WaitableEvent::wait (double timeOutMilliseconds) const
-{
-    if (timeOutMilliseconds >= 0.0)
-        return wait (Milliseconds { timeOutMilliseconds });
-
-    wait();
-    return true;
-}
-
-void WaitableEvent::signal() const
-{
-    std::lock_guard<std::mutex> lock (mutex);
-
-    triggered = true;
-    condition.notify_all();
-}
-
-void WaitableEvent::reset() const
-{
-    triggered = false;
-}
-
-} // namespace juce
+} // namespace juce::detail
