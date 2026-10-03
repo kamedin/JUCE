@@ -398,7 +398,7 @@ public:
     bool isConstrainedNativeWindow() const
     {
         return constrainer != nullptr
-            && (getStyleFlags() & (windowHasTitleBar | windowIsResizable)) == (windowHasTitleBar | windowIsResizable)
+            && (getStyleFlags() & windowIsResizable) != 0
             && ! isKioskMode();
     }
 
@@ -410,12 +410,12 @@ public:
             return;
         }
 
-        if (isConstrainedNativeWindow())
-            XWindowSystem::getInstance()->updateConstraints (windowH);
-
         physicalBounds = XWindowSystem::getInstance()->getWindowBounds (windowH, parentWindow);
         fullScreen = XWindowSystem::getInstance()->isFullScreen (windowH);
         updateScaleFactorFromNewBounds (physicalBounds, true);
+
+        if (isConstrainedNativeWindow())
+            XWindowSystem::getInstance()->updateSizeHints (windowH, *this, physicalBounds);
 
         updateVBlankTimer();
     }
@@ -450,7 +450,10 @@ public:
 
     void startHostManagedResize (Point<int>, ResizableBorderComponent::Zone zone) override
     {
-        XWindowSystem::getInstance()->startHostManagedResize (windowH, zone);
+        // The window manager won't resize a window with fixed size hints, so keep the pointer grab
+        // and let the resizer component handle the drag.
+        if ((getStyleFlags() & windowIsResizable) != 0)
+            XWindowSystem::getInstance()->startHostManagedResize (windowH, zone);
     }
 
     //==============================================================================
